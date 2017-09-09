@@ -1,0 +1,24 @@
+{
+  "name": "Example",
+  "version": "0.0.1",
+  "private": true,
+  "devDependencies": {
+    "babel-preset-react-native-stage-0": "^1.0.1",
+    "jest-expo": "~20.0.0",
+    "react-test-renderer": "16.0.0-alpha.12"
+  },
+  "scripts": {
+    "start": "react-native start",
+    "android": "react-native run-android",
+    "ios": "react-native run-ios",
+    "test": "node node_modules/jest/bin/jest.js --watch"
+  },
+  "jest": {
+    "preset": "jest-expo"
+  },
+  "dependencies": {
+    "react": "15.4.2",
+    "react-native": "0.42.0",
+    "react-native-lit": "file:../"
+  }
+}
