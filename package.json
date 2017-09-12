@@ -1,6 +1,6 @@
 {
   "name": "react-native-lit",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A React Native module that allows accessing device flashlight capabilities",
   "repository": {
     "type": "git",
