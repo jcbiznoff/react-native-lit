@@ -3,6 +3,10 @@
   "name": "react-native-lit",
   "version": "0.0.1",
   "description": "A React Native module that allows accessing device flashlight capabilities",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jcbiznoff/react-native-lit.git"
+  },
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
