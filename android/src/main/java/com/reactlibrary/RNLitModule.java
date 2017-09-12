@@ -23,7 +23,6 @@ import static android.hardware.Camera.open;
 import static android.hardware.camera2.CameraCharacteristics.FLASH_INFO_AVAILABLE;
 
 public class RNLitModule extends ReactContextBaseJavaModule implements LifecycleEventListener {
-
     private final ReactApplicationContext reactContext;
 
     private boolean deviceSupportsFlash;
@@ -40,7 +39,6 @@ public class RNLitModule extends ReactContextBaseJavaModule implements Lifecycle
     public RNLitModule(ReactApplicationContext reactContext) {
         super(reactContext);
         this.reactContext = reactContext;
-        reactContext.addLifecycleEventListener(this);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             torchCallback = new CameraManager.TorchCallback() {
@@ -55,13 +53,16 @@ public class RNLitModule extends ReactContextBaseJavaModule implements Lifecycle
                 @Override
                 public void onTorchModeChanged(@NonNull String cameraId, boolean enabled) {
                     super.onTorchModeChanged(cameraId, enabled);
-
                     WritableMap obj = Arguments.createMap();
                     obj.putBoolean("isEnabled", enabled);
-                    onOffPromise.resolve(obj);
+                    if (onOffPromise != null) {
+                        onOffPromise.resolve(obj);
+                    }
                 }
             };
+            this.camManager = (CameraManager) reactContext.getSystemService(Context.CAMERA_SERVICE);
         }
+        reactContext.addLifecycleEventListener(this);
     }
 
     @Override
@@ -71,7 +72,6 @@ public class RNLitModule extends ReactContextBaseJavaModule implements Lifecycle
 
     @ReactMethod
     public void isFlashAvail(Promise promise) {
-        Log.v(getClass().getSimpleName(), "isFlashAvailClicked");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             this.camManager = (CameraManager) reactContext.getSystemService(Context.CAMERA_SERVICE);
             // find the first camera that supports flash
@@ -138,20 +138,22 @@ public class RNLitModule extends ReactContextBaseJavaModule implements Lifecycle
                 }
                 camera.setParameters(p);
                 camera.startPreview();
-                obj.putBoolean("isEnabled", true);
             } else {
                 p.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
                 camera.setParameters(p);
                 camera.stopPreview();
             }
+            obj.putBoolean("isEnabled", turnOnNow);
             onOffPromise.resolve(obj);
         }
     }
 
     @Override
     public void onHostResume() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && (this.camManager != null)) {
-            this.camManager.registerTorchCallback(torchCallback, null);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (this.camManager != null) {
+                this.camManager.registerTorchCallback(torchCallback, null);
+            }
         } else {
             camera = open();
         }
@@ -159,8 +161,11 @@ public class RNLitModule extends ReactContextBaseJavaModule implements Lifecycle
 
     @Override
     public void onHostPause() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && (this.camManager != null)) {
-            this.camManager.unregisterTorchCallback(torchCallback);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (this.camManager != null) {
+                onOffPromise = null;
+                this.camManager.unregisterTorchCallback(torchCallback);
+            }
         } else {
             camera.release();
         }

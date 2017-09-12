@@ -20,15 +20,12 @@ export default class App extends React.Component<void, void, State> {
   updateFlashlight = () => {
     RNLit.isFlashAvail()
       .then(result => {
-        console.log('result', result);
         if (result.deviceSupportsFlash) {
-          return RNLit.turnOn(!this.state.isOn)
-        } else {
-          throw 'no flash!';
+          return RNLit.turnOn(!this.state.isOn);
         }
       })
       .then(result => {
-        this.setState({isOn: !this.state.isOn})
+        this.setState({isOn: !this.state.isOn});
       })
       .catch(error => {console.log(error)});
   }

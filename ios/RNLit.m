@@ -33,7 +33,7 @@ RCT_EXPORT_METHOD(turnOn: (BOOL) turnOnNow
         [device setTorchMode: turnOnNow ? AVCaptureTorchModeOn : AVCaptureTorchModeOff];
         [device unlockForConfiguration];
     }
-    resolve(@{@"isEnabled": @(true)});
+    resolve(@{@"isEnabled": @(turnOnNow)});
 }
 
 @end
