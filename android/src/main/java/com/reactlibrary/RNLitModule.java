@@ -3,6 +3,7 @@ package com.reactlibrary;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.hardware.Camera;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
@@ -18,6 +19,7 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.WritableMap;
 
+import static android.hardware.Camera.open;
 import static android.hardware.camera2.CameraCharacteristics.FLASH_INFO_AVAILABLE;
 
 public class RNLitModule extends ReactContextBaseJavaModule implements LifecycleEventListener {
@@ -28,6 +30,7 @@ public class RNLitModule extends ReactContextBaseJavaModule implements Lifecycle
     private CameraManager.TorchCallback torchCallback;
     private String cameraIdWithFlash;
     private CameraManager camManager;
+    private static Camera camera;
     private Promise onOffPromise;
 
     private static final String ERROR_FLASHLIGHT_NOT_AVAILABLE = "500";
@@ -37,6 +40,7 @@ public class RNLitModule extends ReactContextBaseJavaModule implements Lifecycle
     public RNLitModule(ReactApplicationContext reactContext) {
         super(reactContext);
         this.reactContext = reactContext;
+        reactContext.addLifecycleEventListener(this);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             torchCallback = new CameraManager.TorchCallback() {
@@ -118,7 +122,29 @@ public class RNLitModule extends ReactContextBaseJavaModule implements Lifecycle
                 promise.reject(ERROR_CHANGING_TORCH_MODE, e.getMessage());
             }
         } else {
-            //TODO: worry about this later
+            if (camera == null) {
+                Log.w(getClass().getSimpleName(), "Camera failed to open");
+                onOffPromise.reject(ERROR_CANNOT_ACCESS_CAMERA, "Camera is not available");
+                return;
+            }
+
+            final Camera.Parameters p = camera.getParameters();
+            WritableMap obj = Arguments.createMap();
+            if (turnOnNow) {
+                if (p.getSupportedFlashModes().contains(Camera.Parameters.FLASH_MODE_TORCH)) {
+                    p.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
+                } else if (p.getSupportedFlashModes().contains(Camera.Parameters.FLASH_MODE_ON)) {
+                    p.setFlashMode((Camera.Parameters.FLASH_MODE_ON));
+                }
+                camera.setParameters(p);
+                camera.startPreview();
+                obj.putBoolean("isEnabled", true);
+            } else {
+                p.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+                camera.setParameters(p);
+                camera.stopPreview();
+            }
+            onOffPromise.resolve(obj);
         }
     }
 
@@ -126,6 +152,8 @@ public class RNLitModule extends ReactContextBaseJavaModule implements Lifecycle
     public void onHostResume() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && (this.camManager != null)) {
             this.camManager.registerTorchCallback(torchCallback, null);
+        } else {
+            camera = open();
         }
     }
 
@@ -133,6 +161,8 @@ public class RNLitModule extends ReactContextBaseJavaModule implements Lifecycle
     public void onHostPause() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && (this.camManager != null)) {
             this.camManager.unregisterTorchCallback(torchCallback);
+        } else {
+            camera.release();
         }
     }
 
