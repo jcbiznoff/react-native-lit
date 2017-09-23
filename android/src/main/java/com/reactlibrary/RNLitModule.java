@@ -111,6 +111,7 @@ public class RNLitModule extends ReactContextBaseJavaModule implements Lifecycle
     public void turnOn(final boolean turnOnNow, final Promise promise) {
         this.onOffPromise = promise;
         if (!this.deviceSupportsFlash) {
+            onOffPromise.reject(ERROR_FLASHLIGHT_NOT_AVAILABLE, "Flash is not available");
             return;
         }
 
